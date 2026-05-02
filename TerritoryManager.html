@@ -730,7 +730,7 @@ function init() {
   }
 }
 
-function loadFromStorage() {
+/*function loadFromStorage() {
   try {
     const t = localStorage.getItem('tm_territories');
     if (t) territories = JSON.parse(t);
@@ -743,6 +743,22 @@ function loadFromStorage() {
       if (settings.congName) document.getElementById('cong-name').value = settings.congName;
       if (settings.serviceYear) document.getElementById('service-year').value = settings.serviceYear;
     }
+  } catch(e) {}
+}*/
+
+function loadFromStorage() {
+  try {
+    const t = localStorage.getItem('tm_territories');
+    if (t) territories = JSON.parse(t);
+
+    const s = localStorage.getItem('tm_settings');
+    if (s) settings = JSON.parse(s);
+
+    // 🔥 FORCE OVERRIDE (important)
+    settings.sheetId = "https://docs.google.com/spreadsheets/d/145CSJpaadbGDYlvAC8ljE5XNuPyGj6RknOt_IqFfuv8/edit";
+    settings.apiKey = "AIzaSyDyKAN_mCNAZ1i88skeGIncTylrb2_zNKo";
+    settings.scriptUrl = "https://script.google.com/macros/s/AKfycbw862VEn3AnDdivlfqDn_lNfXTuIfvZCDeZGyboSryAfa8ZnuL84F7Gr4NtUB9Mb7frAw/exec";
+
   } catch(e) {}
 }
 
