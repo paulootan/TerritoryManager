@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Territory Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --navy: #1a2744;
+  --navy2: #253360;
+  --gold: #c8932a;
+  --gold-light: #f0c060;
+  --gold-pale: #fef9ed;
+  --cream: #faf7f2;
+  --white: #ffffff;
+  --gray: #6b7280;
+  --gray2: #9ca3af;
+  --light: #f3f0eb;
+  --border: #e5ddd0;
+  --green: #2d6a4f;
+  --green-light: #d1fae5;
+  --red: #9b2335;
+  --red-light: #fee2e2;
+  --orange: #c75b20;
+  --orange-light: #fef3c7;
+  --yellow: #d97706;
+  --shadow: 0 2px 16px rgba(26,39,68,0.10);
+  --shadow-lg: 0 4px 24px rgba(26,39,68,0.15);
+  --purple: #6b21a8;
+  --purple-light: #f3e8ff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--navy);
+  min-height: 100vh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+h1,h2,h3,h4 { font-family: 'DM Serif Display', serif; }
+
+/* HEADER */
+.header {
+  background: var(--navy);
+  color: var(--white);
+  padding: 16px 16px 12px;
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 2px 12px rgba(26,39,68,0.3);
+}
+.header h1 { font-size: 19px; color: var(--gold-light); }
+.header-sub { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.6px; }
+.header-actions { display: flex; gap: 6px; }
+.icon-btn {
+  background: rgba(255,255,255,0.1);
+  border: none; color: var(--white);
+  width: 34px; height: 34px; border-radius: 9px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: background 0.2s;
+}
+.icon-btn:hover { background: rgba(255,255,255,0.2); }
+.icon-btn.syncing { animation: spin 1s linear infinite; }
+
+/* NAV */
+.nav {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; position: sticky; top: 60px; z-index: 99;
+}
+.nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  flex: none; padding: 11px 16px;
+  border: none; background: none; color: var(--gray);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap;
+  transition: all 0.2s;
+}
+.nav-btn.active { color: var(--navy); border-color: var(--gold); font-weight: 600; }
+
+/* CONTENT */
+.content { padding: 14px; padding-bottom: 90px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* CARDS */
+.card {
+  background: var(--white); border-radius: 14px;
+  padding: 14px; margin-bottom: 10px;
+  box-shadow: var(--shadow); border: 1px solid var(--border);
+  cursor: pointer; transition: box-shadow 0.2s, transform 0.15s;
+}
+.card:active { transform: scale(0.99); }
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.terr-number {
+  background: var(--navy); color: var(--gold-light);
+  font-family: 'DM Serif Display', serif; font-size: 18px;
+  min-width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 6px;
+}
+.status-badge {
+  font-size: 10px; font-weight: 700; padding: 3px 9px;
+  border-radius: 20px; letter-spacing: 0.3px; white-space: nowrap;
+}
+.badge-green { background: var(--green-light); color: #065f46; }
+.badge-yellow { background: var(--orange-light); color: #92400e; }
+.badge-red { background: var(--red-light); color: #991b1b; }
+.badge-gray { background: var(--light); color: var(--gray); }
+
+.card-name { font-size: 14px; font-weight: 600; color: var(--navy); }
+.card-dates { font-size: 11px; color: var(--gray); margin-top: 2px; }
+.card-comment {
+  font-size: 11px; color: var(--gray); margin-top: 8px;
+  font-style: italic; background: var(--light); padding: 6px 10px;
+  border-radius: 8px; border-left: 3px solid var(--gold);
+}
+.card-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+/* ATTENTION BANNER */
+.attention-banner {
+  background: var(--red-light); border: 1.5px solid #fca5a5;
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.attention-banner .emoji { font-size: 22px; }
+.attention-banner p { font-size: 12px; color: #7f1d1d; line-height: 1.5; }
+.attention-banner strong { display: block; font-size: 13px; }
+
+/* BUTTONS */
+.btn {
+  padding: 8px 13px; border-radius: 8px; border: none;
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.18s;
+  display: flex; align-items: center; gap: 5px; white-space: nowrap;
+}
+.btn-primary { background: var(--navy); color: var(--white); }
+.btn-primary:hover { background: var(--navy2); }
+.btn-success { background: var(--green); color: var(--white); }
+.btn-danger { background: var(--red); color: var(--white); }
+.btn-warning { background: var(--orange); color: var(--white); }
+.btn-gold { background: var(--gold); color: var(--white); }
+.btn-outline { background: transparent; color: var(--navy); border: 1.5px solid var(--border); }
+.btn-outline:hover { background: var(--light); }
+.btn-sm { padding: 5px 10px; font-size: 11px; }
+.btn-full { width: 100%; justify-content: center; padding: 12px; font-size: 14px; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.stat-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px; text-align: center; box-shadow: var(--shadow);
+}
+.stat-number { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--navy); }
+.stat-label { font-size: 10px; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+.stat-card.gold .stat-number { color: var(--gold); }
+.stat-card.green .stat-number { color: var(--green); }
+.stat-card.red .stat-number { color: var(--red); }
+.stat-card.orange .stat-number { color: var(--orange); }
+.stat-card.purple .stat-number { color: var(--purple); }
+.stat-card.clickable { cursor: pointer; transition: box-shadow 0.2s, transform 0.15s; }
+.stat-card.clickable:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.stat-card.clickable:active { transform: scale(0.97); }
+.stat-card .stat-tap { font-size: 9px; color: var(--gray2); margin-top: 3px; letter-spacing: 0.3px; }
+
+/* SEARCH */
+.search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-input, .filter-select {
+  padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 10px;
+  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  background: var(--white); color: var(--navy); outline: none;
+}
+.search-input { flex: 1; }
+.search-input:focus, .filter-select:focus { border-color: var(--gold); }
+.filter-select { min-width: 115px; }
+
+/* SECTION LABEL */
+.section-label {
+  font-size: 10px; font-weight: 700; color: var(--gray);
+  text-transform: uppercase; letter-spacing: 0.8px;
+  margin-bottom: 8px; margin-top: 4px;
+}
+
+/* MODAL */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(26,39,68,0.55); z-index: 200;
+  align-items: flex-end; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--white); border-radius: 20px 20px 0 0;
+  padding: 24px 18px; width: 100%; max-width: 480px;
+  max-height: 92vh; overflow-y: auto;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: -10px auto 16px; }
+.modal h2 { font-size: 19px; margin-bottom: 14px; color: var(--navy); }
+
+/* FORM */
+.form-group { margin-bottom: 12px; }
+.form-group label {
+  display: block; font-size: 11px; font-weight: 600; color: var(--gray);
+  margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px;
+}
+.form-control {
+  width: 100%; padding: 10px 13px; border: 1.5px solid var(--border);
+  border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+  background: var(--white); color: var(--navy); outline: none;
+}
+.form-control:focus { border-color: var(--gold); }
+textarea.form-control { min-height: 72px; resize: vertical; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+.form-error { font-size: 11px; color: var(--red); margin-top: 4px; }
+
+/* BADGES */
+.last-comp-badge {
+  font-size: 10px; background: var(--light); color: var(--navy);
+  padding: 2px 7px; border-radius: 5px; display: inline-block; margin-top: 3px;
+}
+
+/* HISTORY */
+.history-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-start; }
+.history-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); margin-top: 5px; flex-shrink: 0; }
+.history-text { font-size: 12px; color: var(--gray); line-height: 1.6; }
+.history-text strong { color: var(--navy); font-size: 13px; }
+
+/* REPORT */
+.report-controls { background: var(--white); border-radius: 14px; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.report-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+.report-table th { background: var(--navy); color: var(--gold-light); padding: 7px 8px; text-align: left; font-size: 10px; }
+.report-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.report-table tr:nth-child(even) td { background: var(--light); }
+.report-table .inactive-row td { background: #fff1f2 !important; }
+
+/* SETTINGS */
+.settings-card { background: var(--white); border-radius: 14px; padding: 14px; margin-bottom: 10px; border: 1px solid var(--border); }
+.settings-card h3 { font-size: 14px; margin-bottom: 12px; color: var(--navy); font-family: 'DM Serif Display', serif; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.settings-row:last-child { border-bottom: none; }
+
+/* NOTICE */
+.notice {
+  border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;
+  font-size: 12px; line-height: 1.6;
+}
+.notice-gold { background: var(--gold-pale); border: 1.5px solid var(--gold); color: #7a5a00; }
+.notice-red { background: var(--red-light); border: 1.5px solid #fca5a5; color: #7f1d1d; }
+.notice-green { background: var(--green-light); border: 1.5px solid #6ee7b7; color: #064e3b; }
+.notice strong { display: block; margin-bottom: 3px; font-size: 13px; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--navy); color: var(--white);
+  padding: 11px 18px; border-radius: 11px; font-size: 13px; font-weight: 500;
+  z-index: 300; transition: transform 0.3s; white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(26,39,68,0.3);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+
+/* EMPTY */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--gray); }
+.empty-state .emoji { font-size: 44px; margin-bottom: 10px; }
+.empty-state p { font-size: 13px; }
+
+/* LOADING */
+.loading { text-align: center; padding: 36px; color: var(--gray); }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* FAB */
+.fab {
+  position: fixed; bottom: 22px; right: 20px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--gold); color: var(--white); border: none;
+  font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(200,147,42,0.4);
+  display: flex; align-items: center; justify-content: center; z-index: 50;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.fab:hover { transform: scale(1.08); }
+
+/* TABS */
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.tab-btn { flex: 1; padding: 9px; border: none; background: none; font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--gray); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+.tab-btn.active { color: var(--navy); border-color: var(--gold); font-weight: 600; }
+
+/* CHIP */
+.chip { display: inline-flex; align-items: center; gap: 4px; background: var(--light); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: var(--navy); margin: 2px; }
+
+/* BULK IMPORT */
+.bulk-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.bulk-table th { background: var(--navy); color: var(--gold-light); padding: 6px 8px; text-align: left; }
+.bulk-table td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+.bulk-table tr:hover td { background: var(--light); }
+.bulk-table input { width: 100%; border: none; background: transparent; font-size: 11px; font-family: 'DM Sans', sans-serif; outline: none; color: var(--navy); padding: 2px 4px; }
+.bulk-table input:focus { background: var(--gold-pale); border-radius: 4px; }
+
+/* INACTIVE HIGHLIGHT */
+.inactive-card { border-left: 4px solid var(--red) !important; }
+.assigned-card { border-left: 4px solid var(--gold) !important; }
+
+/* APPS SCRIPT BLOCK */
+.code-block { background: #1e1e2e; color: #cdd6f4; border-radius: 10px; padding: 12px; font-family: monospace; font-size: 10px; overflow-x: auto; white-space: pre; line-height: 1.6; margin-top: 8px; }
+
+@media print {
+  .header, .nav, .fab, .card-actions, .modal-overlay, .toast { display: none !important; }
+  body { max-width: 100%; }
+  .report-table td, .report-table th { font-size: 10px; padding: 5px 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Territory Manager</h1>
+    <div class="header-sub" id="header-sub">JW Congregation</div>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" id="sync-btn" onclick="syncData()" title="Sync with Google Sheets">⟳</button>
+    <button class="icon-btn" onclick="showPage('settings')" title="Settings">⚙</button>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showPage('dashboard')" id="nav-dashboard">Dashboard</button>
+  <button class="nav-btn" onclick="showPage('territories')" id="nav-territories">Territories</button>
+  <button class="nav-btn" onclick="showPage('report')" id="nav-report">Report</button>
+  <button class="nav-btn" onclick="showPage('data')" id="nav-data">Data Entry</button>
+  <button class="nav-btn" onclick="showPage('settings')" id="nav-settings">Settings</button>
+</div>
+
+<div class="content">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="stats-grid" style="grid-template-columns:1fr 1fr;">
+    <div class="stat-card clickable" onclick="openStatModal('total')"><div class="stat-number" id="stat-total">-</div><div class="stat-label">Total</div><div class="stat-tap">tap to view</div></div>
+    <div class="stat-card orange clickable" onclick="openStatModal('assigned')"><div class="stat-number" id="stat-assigned">-</div><div class="stat-label">Assigned</div><div class="stat-tap">tap to view</div></div>
+    <div class="stat-card green clickable" onclick="openStatModal('available')"><div class="stat-number" id="stat-available">-</div><div class="stat-label">Available</div><div class="stat-tap">tap to view</div></div>
+    <div class="stat-card red clickable" onclick="openStatModal('inactive')"><div class="stat-number" id="stat-inactive">-</div><div class="stat-label">Not Done This Year</div><div class="stat-tap">tap to view</div></div>
+    <div class="stat-card purple clickable" style="grid-column:1/-1;" onclick="openStatModal('overdue')"><div class="stat-number" id="stat-overdue">-</div><div class="stat-label">⏰ Overdue — Held 4+ Months, Not Returned</div><div class="stat-tap">tap to view all overdue territories</div></div>
+  </div>
+  <div id="dashboard-attention"></div>
+  <div class="section-label">Recently Assigned</div>
+  <div id="recent-list"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+
+<!-- TERRITORIES -->
+<div class="page" id="page-territories">
+  <div class="search-row">
+    <input class="search-input" id="search-input" placeholder="Search territory or publisher..." oninput="renderTerritories()">
+    <select class="filter-select" id="filter-status" onchange="renderTerritories()">
+      <option value="">All</option>
+      <option value="available">Available</option>
+      <option value="assigned">Assigned</option>
+      <option value="inactive">Not Done This Year</option>
+    </select>
+  </div>
+  <div id="territory-list"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+</div>
+
+<!-- REPORT -->
+<div class="page" id="page-report">
+  <div class="report-controls">
+    <h3 style="margin-bottom:12px;">📋 S-13 Territory Report</h3>
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-sy" onclick="switchReportTab('sy')">Service Year</button>
+      <button class="tab-btn" id="tab-custom" onclick="switchReportTab('custom')">Custom Range</button>
+    </div>
+    <div id="report-sy-controls">
+      <div class="form-group">
+        <label>Service Year</label>
+        <select class="form-control" id="report-sy-select"></select>
+      </div>
+    </div>
+    <div id="report-custom-controls" style="display:none">
+      <div class="form-row">
+        <div class="form-group"><label>From</label><input type="date" class="form-control" id="report-from"></div>
+        <div class="form-group"><label>To</label><input type="date" class="form-control" id="report-to"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+      <button class="btn btn-primary" style="flex:1" onclick="renderReportPreview()">👁 Preview</button>
+      <button class="btn btn-gold" style="flex:1" onclick="generateS13PDF()">⬇ Download PDF</button>
+    </div>
+  </div>
+  <div id="report-preview"></div>
+</div>
+
+<!-- DATA ENTRY -->
+<div class="page" id="page-data">
+  <div class="tabs">
+    <button class="tab-btn active" id="tab-view" onclick="switchDataTab('view')">View / Edit</button>
+    <button class="tab-btn" id="tab-bulk" onclick="switchDataTab('bulk')">Bulk Import</button>
+  </div>
+  <div id="data-view-panel">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <input class="search-input" id="data-search" placeholder="Search territory..." oninput="renderDataList()">
+      <button class="btn btn-primary btn-sm" onclick="openAddTerritoryModal()">+ New</button>
+    </div>
+    <div id="data-list"></div>
+  </div>
+  <div id="data-bulk-panel" style="display:none">
+    <div class="notice notice-gold">
+      <strong>📥 Bulk Historical Import</strong>
+      Paste or type historical assignment data below. Each row = one assignment. Dates: DD-MM-YYYY or YYYY-MM-DD. Click "Import All" when ready.
+    </div>
+    <div style="overflow-x:auto;margin-bottom:10px;">
+      <table class="bulk-table" id="bulk-table">
+        <thead>
+          <tr>
+            <th>Terr #</th>
+            <th>Publisher</th>
+            <th>Date Assigned</th>
+            <th>Date Completed</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="bulk-tbody">
+          <tr>
+            <td><input placeholder="1" id="b0_t"></td>
+            <td><input placeholder="Publisher Name" id="b0_p"></td>
+            <td><input placeholder="01-09-2024" id="b0_a"></td>
+            <td><input placeholder="15-01-2025" id="b0_c"></td>
+            <td><button class="btn btn-danger btn-sm" onclick="removeBulkRow(this)">✕</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="addBulkRow()">+ Row</button>
+      <button class="btn btn-primary" onclick="importBulk()">⬆ Import All</button>
+      <button class="btn btn-outline btn-sm" onclick="clearBulk()">Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="notice notice-gold">
+    <strong>📊 Google Sheets Integration</strong>
+    This app syncs with Google Sheets via Google Apps Script. See the integration guide below for full setup instructions.
+  </div>
+
+  <div class="settings-card">
+    <h3>Congregation Info</h3>
+    <div class="form-group"><label>Congregation Name</label><input class="form-control" id="cong-name" placeholder="e.g. Kanayannur Congregation"></div>
+    <div class="form-group"><label>Current Service Year (e.g. 2025)</label><input class="form-control" id="service-year" placeholder="2025" type="number"></div>
+    <button class="btn btn-outline btn-full" onclick="saveCongInfo()">Save Info</button>
+  </div>
+
+  <div class="settings-card">
+    <h3>Google Sheets Config</h3>
+    <div class="form-group"><label>Google Sheet ID</label><input class="form-control" id="sheet-id" placeholder="From URL: /spreadsheets/d/SHEET_ID/edit"></div>
+    <div class="form-group"><label>Google API Key (read access)</label><input class="form-control" id="api-key" placeholder="AIza..." type="password"></div>
+    <div class="form-group"><label>Apps Script Web App URL (write access)</label><input class="form-control" id="script-url" placeholder="https://script.google.com/macros/s/..."></div>
+    <button class="btn btn-primary btn-full" onclick="saveSettings()">💾 Save & Connect</button>
+  </div>
+
+  <div class="settings-card">
+    <h3>Data Management</h3>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="exportJSON()">⬇ Export JSON</button>
+      <button class="btn btn-outline" onclick="importJSON()">⬆ Import JSON</button>
+      <button class="btn btn-danger btn-sm" onclick="clearAllData()">🗑 Clear All</button>
+    </div>
+    <input type="file" id="import-file" style="display:none" accept=".json" onchange="handleImport(event)">
+  </div>
+
+  <div class="settings-card">
+    <h3>Google Apps Script Code</h3>
+    <p style="font-size:12px;color:var(--gray);margin-bottom:8px;">Copy this into your Google Apps Script editor (Extensions → Apps Script in your Sheet) and deploy as a Web App.</p>
+    <div class="code-block" id="apps-script-code">function doGet(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const action = e.parameter.action || 'getAll';
+  const result = {};
+
+  if (action === 'getAll') {
+    result.territories = sheetToJSON(ss.getSheetByName('Territories'));
+    result.assignments = sheetToJSON(ss.getSheetByName('Assignments'));
+    result.comments = sheetToJSON(ss.getSheetByName('Comments'));
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const data = JSON.parse(e.postData.contents);
+  const action = data.action;
+
+  if (action === 'addAssignment') {
+    const sheet = ss.getSheetByName('Assignments');
+    const id = sheet.getLastRow();
+    sheet.appendRow([id, data.territory_id, data.assigned_to,
+      data.date_assigned, data.date_completed || '', data.service_year]);
+    updateLastCompleted(ss, data.territory_id, data.date_completed);
+  }
+  if (action === 'completeAssignment') {
+    updateAssignmentRow(ss, data.assignment_id, data.date_completed);
+    updateLastCompleted(ss, data.territory_id, data.date_completed);
+  }
+  if (action === 'addComment') {
+    const sheet = ss.getSheetByName('Comments');
+    const id = sheet.getLastRow();
+    sheet.appendRow([id, data.territory_id, data.assignment_id,
+      data.comment_text, data.comment_date]);
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify({status:'ok'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function sheetToJSON(sheet) {
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  return data.slice(1).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = row[i]);
+    return obj;
+  });
+}
+
+function updateLastCompleted(ss, tid, date) {
+  if (!date) return;
+  const sheet = ss.getSheetByName('Territories');
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == tid) {
+      sheet.getRange(i+1, 2).setValue(date);
+      return;
+    }
+  }
+  sheet.appendRow([tid, date]);
+}
+
+function updateAssignmentRow(ss, aid, date) {
+  const sheet = ss.getSheetByName('Assignments');
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == aid) {
+      sheet.getRange(i+1, 5).setValue(date);
+      return;
+    }
+  }
+}</div>
+    <button class="btn btn-outline btn-sm" onclick="copyScript()" style="margin-top:8px;">📋 Copy Script</button>
+  </div>
+
+  <div class="settings-card">
+    <h3>About</h3>
+    <div class="settings-row"><span style="font-size:13px;">Version</span><span style="font-size:12px;color:var(--gray);">2.0.0</span></div>
+    <div class="settings-row"><span style="font-size:13px;">Format</span><span style="font-size:12px;color:var(--gray);">S-13-E 1/22</span></div>
+    <div class="settings-row"><span style="font-size:13px;">Storage</span><span style="font-size:12px;color:var(--gray);">Local + Google Sheets</span></div>
+  </div>
+</div>
+
+</div><!-- end .content -->
+
+<!-- STAT MODAL -->
+<div class="modal-overlay" id="stat-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="stat-modal-title">Territories</h2>
+    <div id="stat-modal-list"></div>
+    <button class="btn btn-outline btn-full" onclick="closeModal('stat-modal')" style="margin-top:10px;">Close</button>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openAssignModal(null)" id="fab-btn" title="Assign Territory">+</button>
+
+<!-- ASSIGN MODAL -->
+<div class="modal-overlay" id="assign-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="assign-modal-title">Assign Territory</h2>
+    <div class="form-group">
+      <label>Territory Number</label>
+      <select class="form-control" id="assign-terr-no"></select>
+    </div>
+    <div class="form-group">
+      <label>Publisher Name</label>
+      <input class="form-control" id="assign-publisher" placeholder="Full name" list="publisher-list" autocomplete="off">
+      <datalist id="publisher-list"></datalist>
+    </div>
+    <div class="form-group">
+      <label>Date Assigned</label>
+      <input type="date" class="form-control" id="assign-date">
+    </div>
+    <div id="assign-error" class="form-error"></div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('assign-modal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveAssignment()">✓ Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPLETE MODAL -->
+<div class="modal-overlay" id="return-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Complete Territory</h2>
+    <div id="return-terr-info" style="background:var(--light);border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px;"></div>
+    <div class="form-group">
+      <label>Date Completed</label>
+      <input type="date" class="form-control" id="return-date">
+    </div>
+    <div class="form-group">
+      <label>Comments / Notes</label>
+      <textarea class="form-control" id="return-comment" placeholder="Notes about this territory..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('return-modal')">Cancel</button>
+      <button class="btn btn-success" style="flex:2" onclick="saveReturn()">✓ Mark Completed</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMMENT MODAL -->
+<div class="modal-overlay" id="comment-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Add Comment</h2>
+    <div class="form-group">
+      <label>Territory <span id="comment-terr-label"></span></label>
+    </div>
+    <div class="form-group">
+      <label>Comment</label>
+      <textarea class="form-control" id="comment-text" placeholder="Add a note about this territory..." rows="4"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" class="form-control" id="comment-date">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('comment-modal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveComment()">Save Comment</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="detail-content"></div>
+    <button class="btn btn-outline btn-full" onclick="closeModal('detail-modal')" style="margin-top:10px;">Close</button>
+  </div>
+</div>
+
+<!-- ADD TERRITORY MODAL -->
+<div class="modal-overlay" id="add-terr-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="add-terr-title">Add Territory</h2>
+    <div class="form-group"><label>Territory Number</label><input type="number" class="form-control" id="new-terr-id" min="1"></div>
+    <div class="form-group"><label>Name / Description (optional)</label><input class="form-control" id="new-terr-name" placeholder="e.g. North Block"></div>
+    <div class="form-group"><label>Last Completed Date (if known)</label><input type="date" class="form-control" id="new-terr-lc"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('add-terr-modal')">Cancel</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveNewTerritory()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT ASSIGNMENT MODAL -->
+<div class="modal-overlay" id="edit-asgn-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Edit Assignment</h2>
+    <input type="hidden" id="edit-asgn-tid">
+    <input type="hidden" id="edit-asgn-idx">
+    <div class="form-group"><label>Publisher</label><input class="form-control" id="edit-pub"></div>
+    <div class="form-group"><label>Date Assigned</label><input type="date" class="form-control" id="edit-da"></div>
+    <div class="form-group"><label>Date Completed</label><input type="date" class="form-control" id="edit-dc"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('edit-asgn-modal')">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteAssignment()">🗑 Delete</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveEditAssignment()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let territories = {};  // { id: { id, name, lastCompleted, assignments:[], comments:[] } }
+let settings = {};
+let currentReturnId = null;
+let currentCommentId = null;
+let reportTab = 'sy';
+let dataTab = 'view';
+let bulkRowCount = 1;
+
+// ===== INIT =====
+function init() {
+  loadFromStorage();
+  const now = new Date();
+  document.getElementById('assign-date').value = toISO(now);
+  document.getElementById('return-date').value = toISO(now);
+  document.getElementById('comment-date').value = toISO(now);
+  populateServiceYears();
+  updateHeaderSub();
+  renderAll();
+  if (Object.keys(territories).length === 0) {
+    loadBuiltinData();
+  }
+}
+
+function loadFromStorage() {
+  try {
+    const t = localStorage.getItem('tm_territories');
+    if (t) territories = JSON.parse(t);
+    const s = localStorage.getItem('tm_settings');
+    if (s) {
+      settings = JSON.parse(s);
+      if (settings.sheetId) document.getElementById('sheet-id').value = settings.sheetId;
+      if (settings.apiKey) document.getElementById('api-key').value = settings.apiKey;
+      if (settings.scriptUrl) document.getElementById('script-url').value = settings.scriptUrl;
+      if (settings.congName) document.getElementById('cong-name').value = settings.congName;
+      if (settings.serviceYear) document.getElementById('service-year').value = settings.serviceYear;
+    }
+  } catch(e) {}
+}
+
+function save() {
+  localStorage.setItem('tm_territories', JSON.stringify(territories));
+}
+
+function updateHeaderSub() {
+  const name = settings.congName || 'JW Congregation';
+  document.getElementById('header-sub').textContent = name;
+}
+
+// ===== SERVICE YEAR LOGIC =====
+function getServiceYear(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  const m = d.getMonth() + 1; // 1-12
+  const y = d.getFullYear();
+  return m >= 9 ? y : y - 1; // Sep=start of new year
+}
+
+function getCurrentServiceYear() {
+  return parseInt(settings.serviceYear) || getServiceYear(toISO(new Date()));
+}
+
+function getServiceYearRange(startYear) {
+  // e.g. startYear=2024 → Sep 1 2024 to Aug 31 2025
+  return {
+    from: `${startYear}-09-01`,
+    to: `${startYear + 1}-08-31`
+  };
+}
+
+function isInactiveThisYear(terr) {
+  const sy = getCurrentServiceYear();
+  const { from, to } = getServiceYearRange(sy);
+  const anyCompleted = (terr.assignments || []).some(a => {
+    if (!a.dateCompleted) return false;
+    return a.dateCompleted >= from && a.dateCompleted <= to;
+  });
+  const anyCurrentlyAssigned = (terr.assignments || []).some(a => !a.dateCompleted);
+  return !anyCompleted && !anyCurrentlyAssigned;
+}
+
+function getTerritoryStatus(terr) {
+  if (!terr.assignments || terr.assignments.length === 0) return 'available';
+  const last = terr.assignments[terr.assignments.length - 1];
+  if (!last.dateCompleted) return 'assigned';
+  return 'available';
+}
+
+function getLastAssignment(terr) {
+  if (!terr.assignments || terr.assignments.length === 0) return null;
+  return terr.assignments[terr.assignments.length - 1];
+}
+
+function getLast4Assignments(terr, fromDate, toDate) {
+  const all = (terr.assignments || []).filter(a => {
+    if (!fromDate || !toDate) return true;
+    const da = a.dateAssigned || '';
+    const dc = a.dateCompleted || '';
+    return (da >= fromDate && da <= toDate) || (dc >= fromDate && dc <= toDate) || (da <= fromDate && (!dc || dc >= toDate));
+  });
+  return all.slice(-4);
+}
+
+function detectInactiveTerritories() {
+  return Object.values(territories)
+    .filter(t => t.active !== false && isInactiveThisYear(t))
+    .sort((a, b) => {
+      const aDate = a.lastCompleted || '1900-01-01';
+      const bDate = b.lastCompleted || '1900-01-01';
+      return aDate.localeCompare(bDate);
+    });
+}
+
+function detectOverdueTerritories() {
+  // Territories currently assigned (not returned) for 4+ months (120 days) as of today
+  const today = new Date();
+  return Object.values(territories)
+    .filter(t => {
+      if (t.active === false) return false;
+      const la = getLastAssignment(t);
+      if (!la || la.dateCompleted) return false; // must be currently assigned
+      const assigned = new Date(la.dateAssigned + 'T00:00:00');
+      const daysOut = Math.floor((today - assigned) / 86400000);
+      return daysOut >= 120;
+    })
+    .sort((a, b) => {
+      const la = getLastAssignment(a), lb = getLastAssignment(b);
+      return (la ? la.dateAssigned : '') < (lb ? lb.dateAssigned : '') ? -1 : 1;
+    });
+}
+
+// ===== NAVIGATION =====
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  document.getElementById('fab-btn').style.display =
+    (name === 'territories' || name === 'dashboard') ? 'flex' : 'none';
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'territories') renderTerritories();
+  if (name === 'report') { populateServiceYears(); renderReportPreview(); }
+  if (name === 'data') renderDataList();
+}
+
+// ===== RENDER DASHBOARD =====
+function renderDashboard() {
+  const all = Object.values(territories).filter(t => t.active !== false);
+  const assigned = all.filter(t => getTerritoryStatus(t) === 'assigned');
+  const available = all.filter(t => getTerritoryStatus(t) === 'available');
+  const inactive = detectInactiveTerritories();
+  const overdue = detectOverdueTerritories();
+
+  document.getElementById('stat-total').textContent = all.length;
+  document.getElementById('stat-assigned').textContent = assigned.length;
+  document.getElementById('stat-available').textContent = available.length;
+  document.getElementById('stat-inactive').textContent = inactive.length;
+  document.getElementById('stat-overdue').textContent = overdue.length;
+
+  // Attention banner for inactive
+  const attEl = document.getElementById('dashboard-attention');
+  if (inactive.length > 0) {
+    const terrNums = inactive.slice(0, 10).map(t => t.id).join(', ');
+    const more = inactive.length > 10 ? ` +${inactive.length - 10} more` : '';
+    attEl.innerHTML = `<div class="attention-banner">
+      <div class="emoji">🔴</div>
+      <p><strong>${inactive.length} territories need attention this service year!</strong>
+      Not assigned or completed this year: <strong>${terrNums}${more}</strong></p>
+    </div>`;
+  } else {
+    attEl.innerHTML = `<div class="notice notice-green" style="margin-bottom:12px;">✅ All territories have been worked this service year!</div>`;
+  }
+
+  // Recent - currently assigned
+  const recent = assigned
+    .sort((a, b) => {
+      const la = getLastAssignment(a), lb = getLastAssignment(b);
+      return (lb ? lb.dateAssigned : '') > (la ? la.dateAssigned : '') ? 1 : -1;
+    })
+    .slice(0, 10);
+
+  const el = document.getElementById('recent-list');
+  if (recent.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="emoji">📋</div><p>No territories currently assigned</p></div>';
+    return;
+  }
+  el.innerHTML = recent.map(t => {
+    const la = getLastAssignment(t);
+    const daysOut = la ? Math.floor((new Date() - new Date(la.dateAssigned + 'T00:00:00')) / 86400000) : 0;
+    const urgent = daysOut > 120;
+    return `<div class="card ${urgent ? 'inactive-card' : 'assigned-card'}" onclick="openDetail(${t.id})">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="terr-number">${t.id}</div>
+          <div>
+            <div class="card-name">${la.publisher}</div>
+            <div class="card-dates">Assigned: ${fmt(la.dateAssigned)} (${daysOut}d ago)</div>
+          </div>
+        </div>
+        <span class="status-badge ${urgent ? 'badge-red' : 'badge-yellow'}">${urgent ? 'Overdue' : 'Assigned'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== STAT MODAL =====
+function openStatModal(type) {
+  const all = Object.values(territories).filter(t => t.active !== false).sort((a,b)=>a.id-b.id);
+  let title = '', list = [];
+
+  if (type === 'total') {
+    title = `All Territories (${all.length})`;
+    list = all;
+  } else if (type === 'assigned') {
+    list = all.filter(t => getTerritoryStatus(t) === 'assigned');
+    title = `Assigned Territories (${list.length})`;
+  } else if (type === 'available') {
+    list = all.filter(t => getTerritoryStatus(t) === 'available');
+    title = `Available Territories (${list.length})`;
+  } else if (type === 'inactive') {
+    list = detectInactiveTerritories();
+    title = `Not Done This Year (${list.length})`;
+  } else if (type === 'overdue') {
+    list = detectOverdueTerritories();
+    title = `⏰ Overdue Territories (${list.length})`;
+  }
+
+  document.getElementById('stat-modal-title').textContent = title;
+
+  if (list.length === 0) {
+    document.getElementById('stat-modal-list').innerHTML =
+      '<div class="empty-state"><div class="emoji">✅</div><p>No territories in this category</p></div>';
+    openModal('stat-modal');
+    return;
+  }
+
+  const today = new Date();
+  document.getElementById('stat-modal-list').innerHTML = list.map(t => {
+    const la = getLastAssignment(t);
+    const status = getTerritoryStatus(t);
+    const inactive = isInactiveThisYear(t);
+    let daysOut = 0, overdueFlag = false;
+    if (la && !la.dateCompleted) {
+      daysOut = Math.floor((today - new Date(la.dateAssigned + 'T00:00:00')) / 86400000);
+      overdueFlag = daysOut >= 120;
+    }
+
+    let badgeClass = 'badge-green', badgeText = 'Available';
+    if (type === 'overdue' || overdueFlag) { badgeClass = 'badge-red'; badgeText = '⏰ Overdue'; }
+    else if (inactive) { badgeClass = 'badge-red'; badgeText = '🔴 Not Done'; }
+    else if (status === 'assigned') { badgeClass = 'badge-yellow'; badgeText = 'Assigned'; }
+
+    let info = '';
+    if (la && !la.dateCompleted) {
+      info = `<div class="card-dates">${la.publisher} · Since ${fmt(la.dateAssigned)}${daysOut ? ' (' + daysOut + 'd)' : ''}</div>`;
+    } else if (t.lastCompleted) {
+      info = `<div class="card-dates">Last done: ${fmt(t.lastCompleted)}</div>`;
+    } else {
+      info = `<div class="card-dates">No history</div>`;
+    }
+
+    return `<div class="card" style="cursor:pointer" onclick="closeModal('stat-modal');openDetail(${t.id})">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="terr-number">${t.id}</div>
+          <div>
+            <div class="card-name">${la && !la.dateCompleted ? la.publisher : (t.name || 'Territory ' + t.id)}</div>
+            ${info}
+          </div>
+        </div>
+        <span class="status-badge ${badgeClass}">${badgeText}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  openModal('stat-modal');
+}
+
+// ===== RENDER TERRITORIES =====
+function renderTerritories() {
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  const filter = document.getElementById('filter-status').value;
+  const all = Object.values(territories).filter(t => t.active !== false);
+
+  const list = all.filter(t => {
+    const la = getLastAssignment(t);
+    const status = getTerritoryStatus(t);
+    const inactive = isInactiveThisYear(t);
+    const matchQ = !q || String(t.id).includes(q) ||
+      (la && la.publisher.toLowerCase().includes(q)) ||
+      (t.name && t.name.toLowerCase().includes(q));
+    let matchF = !filter;
+    if (filter === 'available') matchF = status === 'available';
+    else if (filter === 'assigned') matchF = status === 'assigned';
+    else if (filter === 'inactive') matchF = inactive;
+    return matchQ && matchF;
+  }).sort((a, b) => a.id - b.id);
+
+  const el = document.getElementById('territory-list');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="emoji">🔍</div><p>No territories found</p></div>';
+    return;
+  }
+
+  el.innerHTML = list.map(t => {
+    const la = getLastAssignment(t);
+    const status = getTerritoryStatus(t);
+    const inactive = isInactiveThisYear(t);
+    const lastComp = t.lastCompleted ? `<div class="last-comp-badge">Last done: ${fmt(t.lastCompleted)}</div>` : '';
+    const latestComment = (t.comments || []).slice(-1)[0];
+    const commentHtml = latestComment ? `<div class="card-comment">💬 ${latestComment.comment_text}</div>` : '';
+
+    let badgeClass = 'badge-green', badgeText = 'Available';
+    if (inactive) { badgeClass = 'badge-red'; badgeText = '🔴 Not Done'; }
+    else if (status === 'assigned') { badgeClass = 'badge-yellow'; badgeText = 'Assigned'; }
+
+    let cardClass = inactive ? 'inactive-card' : (status === 'assigned' ? 'assigned-card' : '');
+
+    let actions = '';
+    if (status === 'available') {
+      actions = `<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();openAssignModal(${t.id})">+ Assign</button>`;
+    } else {
+      actions = `<button class="btn btn-success btn-sm" onclick="event.stopPropagation();openReturnModal(${t.id})">✓ Complete</button>
+                 <button class="btn btn-warning btn-sm" onclick="event.stopPropagation();openAssignModal(${t.id})">↺ Reassign</button>`;
+    }
+
+    return `<div class="card ${cardClass}" onclick="openDetail(${t.id})">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="terr-number">${t.id}</div>
+          <div>
+            <div class="card-name">${la && !la.dateCompleted ? la.publisher : (t.name || 'Territory ' + t.id)}</div>
+            <div class="card-dates">${la && !la.dateCompleted ? 'Since: ' + fmt(la.dateAssigned) : 'Available'}</div>
+            ${lastComp}
+          </div>
+        </div>
+        <span class="status-badge ${badgeClass}">${badgeText}</span>
+      </div>
+      ${commentHtml}
+      <div class="card-actions">
+        ${actions}
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openCommentModal(${t.id})">💬</button>
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail(${t.id})">Details</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== MODALS =====
+function openAssignModal(id) {
+  const avail = Object.values(territories).filter(t => t.active !== false).sort((a, b) => a.id - b.id);
+  const sel = document.getElementById('assign-terr-no');
+  sel.innerHTML = avail.map(t => `<option value="${t.id}" ${t.id == id ? 'selected' : ''}>${t.id}${t.name ? ' – ' + t.name : ''}</option>`).join('');
+  document.getElementById('assign-date').value = toISO(new Date());
+  document.getElementById('assign-publisher').value = '';
+  document.getElementById('assign-error').textContent = '';
+  const pubs = [...new Set(Object.values(territories).flatMap(t => (t.assignments || []).map(a => a.publisher)))].sort();
+  document.getElementById('publisher-list').innerHTML = pubs.map(p => `<option value="${p}">`).join('');
+  document.getElementById('assign-modal-title').textContent = id ? `Assign Territory ${id}` : 'Assign Territory';
+  openModal('assign-modal');
+}
+
+function saveAssignment() {
+  const terrId = parseInt(document.getElementById('assign-terr-no').value);
+  const publisher = document.getElementById('assign-publisher').value.trim();
+  const date = document.getElementById('assign-date').value;
+  const errEl = document.getElementById('assign-error');
+  errEl.textContent = '';
+
+  if (!publisher) { errEl.textContent = 'Publisher name is required.'; return; }
+  if (!date) { errEl.textContent = 'Date is required.'; return; }
+  if (!territories[terrId]) { errEl.textContent = 'Territory not found.'; return; }
+
+  // Validate: no duplicate active assignment
+  const cur = getLastAssignment(territories[terrId]);
+  if (cur && !cur.dateCompleted) {
+    // Allow reassign (completing implicitly)
+  }
+
+  if (!territories[terrId].assignments) territories[terrId].assignments = [];
+  territories[terrId].assignments.push({ publisher, dateAssigned: date, dateCompleted: null, comment: '' });
+  save(); closeModal('assign-modal'); renderAll();
+  showToast(`Territory ${terrId} assigned to ${publisher}`, 'success');
+  postToSheet({ action: 'addAssignment', territory_id: terrId, assigned_to: publisher, date_assigned: date, service_year: `${getServiceYear(date)}-${getServiceYear(date)+1}` });
+}
+
+function openReturnModal(id) {
+  currentReturnId = id;
+  const t = territories[id];
+  const la = getLastAssignment(t);
+  document.getElementById('return-terr-info').innerHTML =
+    `<strong>Territory ${id}</strong> — Assigned to <strong>${la.publisher}</strong> on ${fmt(la.dateAssigned)}`;
+  document.getElementById('return-date').value = toISO(new Date());
+  document.getElementById('return-comment').value = la.comment || '';
+  openModal('return-modal');
+}
+
+function saveReturn() {
+  const date = document.getElementById('return-date').value;
+  const comment = document.getElementById('return-comment').value.trim();
+  if (!date) { showToast('Please set completion date', 'error'); return; }
+  const t = territories[currentReturnId];
+  const la = getLastAssignment(t);
+  // Validate date logic
+  if (la.dateAssigned && date < la.dateAssigned) {
+    showToast('Completion date cannot be before assignment date', 'error'); return;
+  }
+  la.dateCompleted = date;
+  la.comment = comment;
+  t.lastCompleted = date;
+  save(); closeModal('return-modal'); renderAll();
+  showToast(`Territory ${currentReturnId} marked complete`, 'success');
+  postToSheet({ action: 'completeAssignment', territory_id: currentReturnId, date_completed: date });
+}
+
+function openCommentModal(id) {
+  currentCommentId = id;
+  document.getElementById('comment-terr-label').textContent = id;
+  document.getElementById('comment-text').value = '';
+  document.getElementById('comment-date').value = toISO(new Date());
+  openModal('comment-modal');
+}
+
+function saveComment() {
+  const text = document.getElementById('comment-text').value.trim();
+  const date = document.getElementById('comment-date').value;
+  if (!text) { showToast('Comment cannot be empty', 'error'); return; }
+  const t = territories[currentCommentId];
+  if (!t.comments) t.comments = [];
+  const la = getLastAssignment(t);
+  const commentObj = {
+    comment_id: Date.now(),
+    territory_id: currentCommentId,
+    assignment_id: la ? (t.assignments.length - 1) : null,
+    comment_text: text,
+    comment_date: date
+  };
+  t.comments.push(commentObj);
+  save(); closeModal('comment-modal'); renderAll();
+  showToast('Comment saved', 'success');
+  postToSheet({ action: 'addComment', ...commentObj });
+}
+
+function openDetail(id) {
+  const t = territories[id];
+  if (!t) return;
+  const assignments = (t.assignments || []);
+  const comments = (t.comments || []);
+  const status = getTerritoryStatus(t);
+  const inactive = isInactiveThisYear(t);
+
+  let badgeHtml = '';
+  if (inactive) badgeHtml = '<span class="status-badge badge-red">🔴 Not Done This Year</span>';
+  else if (status === 'assigned') badgeHtml = '<span class="status-badge badge-yellow">🟡 Assigned</span>';
+  else badgeHtml = '<span class="status-badge badge-green">✅ Available</span>';
+
+  const historyHtml = assignments.length === 0
+    ? '<div class="empty-state" style="padding:20px"><p>No assignments yet</p></div>'
+    : [...assignments].reverse().map((a, rIdx) => {
+        const idx = assignments.length - 1 - rIdx;
+        return `<div class="history-item">
+          <div class="history-dot" style="background:${a.dateCompleted ? 'var(--green)' : 'var(--gold)'}"></div>
+          <div class="history-text" style="flex:1">
+            <strong>${a.publisher}</strong>
+            <button class="btn btn-outline btn-sm" style="float:right;padding:2px 7px;font-size:10px" onclick="openEditAssignment(${id},${idx})">✎</button><br>
+            Assigned: ${fmt(a.dateAssigned)}
+            ${a.dateCompleted ? ' → Completed: ' + fmt(a.dateCompleted) : '<span style="color:var(--orange)"> (in progress)</span>'}
+            ${a.comment ? `<br><em style="color:var(--gray)">💬 ${a.comment}</em>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+  const commentsHtml = comments.length === 0 ? '<div style="font-size:12px;color:var(--gray);padding:8px 0;">No comments yet.</div>'
+    : comments.map(c => `<div class="card-comment" style="margin-bottom:6px;">
+        <span style="font-size:10px;color:var(--gray2)">${fmt(c.comment_date)}</span><br>${c.comment_text}
+      </div>`).join('');
+
+  const la = getLastAssignment(t);
+  let actionBtns = '';
+  if (status === 'available') {
+    actionBtns = `<button class="btn btn-primary btn-sm" onclick="closeModal('detail-modal');openAssignModal(${id})">+ Assign</button>`;
+  } else {
+    actionBtns = `<button class="btn btn-success btn-sm" onclick="closeModal('detail-modal');openReturnModal(${id})">✓ Complete</button>`;
+  }
+
+  document.getElementById('detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <div class="terr-number" style="width:52px;height:52px;font-size:22px;">${id}</div>
+      <div>
+        <h2 style="font-size:20px;">Territory ${id}${t.name ? ' — ' + t.name : ''}</h2>
+        ${badgeHtml}
+        ${t.lastCompleted ? `<div class="last-comp-badge" style="margin-top:4px;">Last done: ${fmt(t.lastCompleted)}</div>` : ''}
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      ${actionBtns}
+      <button class="btn btn-outline btn-sm" onclick="openCommentModal(${id})">💬 Comment</button>
+    </div>
+    <div class="section-label">Assignment History (${assignments.length})</div>
+    ${historyHtml}
+    <div class="section-label" style="margin-top:12px;">Comments</div>
+    ${commentsHtml}`;
+  openModal('detail-modal');
+}
+
+function openAddTerritoryModal(id) {
+  document.getElementById('add-terr-title').textContent = id ? 'Edit Territory' : 'Add Territory';
+  document.getElementById('new-terr-id').value = id || '';
+  document.getElementById('new-terr-id').disabled = !!id;
+  document.getElementById('new-terr-name').value = id && territories[id] ? (territories[id].name || '') : '';
+  document.getElementById('new-terr-lc').value = id && territories[id] ? (territories[id].lastCompleted || '') : '';
+  openModal('add-terr-modal');
+}
+
+function saveNewTerritory() {
+  const id = parseInt(document.getElementById('new-terr-id').value);
+  if (!id) { showToast('Territory number required', 'error'); return; }
+  const name = document.getElementById('new-terr-name').value.trim();
+  const lc = document.getElementById('new-terr-lc').value;
+  if (!territories[id]) territories[id] = { id, assignments: [], comments: [] };
+  if (name) territories[id].name = name;
+  if (lc) territories[id].lastCompleted = lc;
+  save(); closeModal('add-terr-modal'); renderDataList();
+  showToast(`Territory ${id} saved`, 'success');
+}
+
+function openEditAssignment(tid, idx) {
+  document.getElementById('edit-asgn-tid').value = tid;
+  document.getElementById('edit-asgn-idx').value = idx;
+  const a = territories[tid].assignments[idx];
+  document.getElementById('edit-pub').value = a.publisher;
+  document.getElementById('edit-da').value = a.dateAssigned || '';
+  document.getElementById('edit-dc').value = a.dateCompleted || '';
+  openModal('edit-asgn-modal');
+}
+
+function saveEditAssignment() {
+  const tid = parseInt(document.getElementById('edit-asgn-tid').value);
+  const idx = parseInt(document.getElementById('edit-asgn-idx').value);
+  const a = territories[tid].assignments[idx];
+  a.publisher = document.getElementById('edit-pub').value.trim();
+  a.dateAssigned = document.getElementById('edit-da').value;
+  a.dateCompleted = document.getElementById('edit-dc').value || null;
+  if (a.dateCompleted) territories[tid].lastCompleted = a.dateCompleted;
+  save(); closeModal('edit-asgn-modal'); renderAll();
+  showToast('Assignment updated', 'success');
+}
+
+function deleteAssignment() {
+  if (!confirm('Delete this assignment?')) return;
+  const tid = parseInt(document.getElementById('edit-asgn-tid').value);
+  const idx = parseInt(document.getElementById('edit-asgn-idx').value);
+  territories[tid].assignments.splice(idx, 1);
+  save(); closeModal('edit-asgn-modal'); renderAll();
+  showToast('Assignment deleted', 'success');
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ===== DATA ENTRY =====
+function switchDataTab(tab) {
+  dataTab = tab;
+  document.getElementById('data-view-panel').style.display = tab === 'view' ? 'block' : 'none';
+  document.getElementById('data-bulk-panel').style.display = tab === 'bulk' ? 'block' : 'none';
+  document.getElementById('tab-view').classList.toggle('active', tab === 'view');
+  document.getElementById('tab-bulk').classList.toggle('active', tab === 'bulk');
+  if (tab === 'view') renderDataList();
+}
+
+function renderDataList() {
+  const q = (document.getElementById('data-search').value || '').toLowerCase();
+  const list = Object.values(territories)
+    .filter(t => !q || String(t.id).includes(q) || (t.name && t.name.toLowerCase().includes(q)))
+    .sort((a, b) => a.id - b.id);
+
+  const el = document.getElementById('data-list');
+  if (list.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="emoji">📋</div><p>No territories</p></div>'; return;
+  }
+  el.innerHTML = list.map(t => {
+    const la = getLastAssignment(t);
+    const aCount = (t.assignments || []).length;
+    return `<div class="card" style="cursor:default">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="terr-number">${t.id}</div>
+          <div>
+            <div class="card-name">${t.name || 'Territory ' + t.id}</div>
+            <div class="card-dates">${aCount} assignment${aCount !== 1 ? 's' : ''}${t.lastCompleted ? ' · Last: ' + fmt(t.lastCompleted) : ''}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-outline btn-sm" onclick="openAddTerritoryModal(${t.id})">✎</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteTerr(${t.id})">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function deleteTerr(id) {
+  if (!confirm(`Delete territory ${id} and ALL its data?`)) return;
+  delete territories[id];
+  save(); renderAll(); renderDataList();
+  showToast(`Territory ${id} deleted`, 'success');
+}
+
+let bulkRowN = 0;
+function addBulkRow() {
+  const n = bulkRowN++;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><input placeholder="1" id="b${n}_t"></td>
+    <td><input placeholder="Publisher Name" id="b${n}_p"></td>
+    <td><input placeholder="01-09-2024" id="b${n}_a"></td>
+    <td><input placeholder="15-01-2025" id="b${n}_c"></td>
+    <td><button class="btn btn-danger btn-sm" onclick="removeBulkRow(this)">✕</button></td>`;
+  document.getElementById('bulk-tbody').appendChild(tr);
+}
+
+function removeBulkRow(btn) {
+  btn.closest('tr').remove();
+}
+
+function clearBulk() {
+  document.getElementById('bulk-tbody').innerHTML = '';
+  addBulkRow();
+}
+
+function importBulk() {
+  const rows = document.querySelectorAll('#bulk-tbody tr');
+  let imported = 0, errors = [];
+  rows.forEach((row, i) => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs.length < 4) return;
+    const tid = parseInt(inputs[0].value);
+    const pub = inputs[1].value.trim();
+    const da = parseDate(inputs[2].value.trim());
+    const dc = parseDate(inputs[3].value.trim());
+    if (!tid || !pub || !da) { errors.push(`Row ${i+1}: missing required fields`); return; }
+    if (dc && dc < da) { errors.push(`Row ${i+1}: completion before assignment`); return; }
+    if (!territories[tid]) territories[tid] = { id: tid, assignments: [], comments: [] };
+    territories[tid].assignments.push({ publisher: pub, dateAssigned: da, dateCompleted: dc || null, comment: '' });
+    if (dc) territories[tid].lastCompleted = dc;
+    imported++;
+  });
+  save(); renderAll();
+  if (errors.length) showToast(`Imported ${imported}, ${errors.length} errors`, 'error');
+  else showToast(`Imported ${imported} assignments`, 'success');
+  if (imported > 0) clearBulk();
+}
+
+// ===== REPORT =====
+function populateServiceYears() {
+  const sel = document.getElementById('report-sy-select');
+  const cur = getCurrentServiceYear();
+  sel.innerHTML = '';
+  for (let y = cur; y >= cur - 5; y--) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = `${y}–${y+1} (Sep ${y} – Aug ${y+1})`;
+    if (y === cur) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+function switchReportTab(tab) {
+  reportTab = tab;
+  document.getElementById('report-sy-controls').style.display = tab === 'sy' ? 'block' : 'none';
+  document.getElementById('report-custom-controls').style.display = tab === 'custom' ? 'block' : 'none';
+  document.getElementById('tab-sy').classList.toggle('active', tab === 'sy');
+  document.getElementById('tab-custom').classList.toggle('active', tab === 'custom');
+}
+
+function getReportRange() {
+  if (reportTab === 'sy') {
+    const y = parseInt(document.getElementById('report-sy-select').value);
+    return getServiceYearRange(y);
+  } else {
+    return {
+      from: document.getElementById('report-from').value,
+      to: document.getElementById('report-to').value
+    };
+  }
+}
+
+function renderReportPreview() {
+  const { from, to } = getReportRange();
+  if (!from || !to) { document.getElementById('report-preview').innerHTML = ''; return; }
+  const active = Object.values(territories).filter(t => t.active !== false).sort((a, b) => a.id - b.id);
+
+  // Span check: same or multiple service years?
+  const fromSY = getServiceYear(from);
+  const toSY = getServiceYear(to);
+  const multiYear = fromSY !== toSY;
+
+  const rows = active.map(t => {
+    const last4 = getLast4Assignments(t, from, to);
+    return { t, last4 };
+  });
+
+  const inactive = active.filter(t => isInactiveThisYear(t));
+
+  let html = `<div style="background:var(--white);border-radius:14px;padding:14px;border:1px solid var(--border);margin-bottom:10px;">`;
+  html += `<div style="font-size:13px;margin-bottom:10px;color:var(--gray);">Range: <strong>${fmt(from)}</strong> to <strong>${fmt(to)}</strong>${multiYear ? ' (multi-year)' : ''}</div>`;
+
+  // Inactive alert
+  if (inactive.length > 0) {
+    html += `<div class="notice notice-red" style="margin-bottom:10px;"><strong>⚠️ ${inactive.length} territories NOT done this service year</strong>Territory IDs: ${inactive.map(t=>t.id).join(', ')}</div>`;
+  }
+
+  html += `<div style="overflow-x:auto;"><table class="report-table">
+    <tr>
+      <th style="min-width:50px;">Terr #</th>
+      <th style="min-width:90px;">Last Done</th>
+      <th colspan="2">Assignment 1</th>
+      <th colspan="2">Assignment 2</th>
+      <th colspan="2">Assignment 3</th>
+      <th colspan="2">Assignment 4</th>
+    </tr>
+    <tr style="background:rgba(26,39,68,0.05);">
+      <th></th><th></th>
+      <th style="font-size:9px;">Publisher</th><th style="font-size:9px;">Dates</th>
+      <th style="font-size:9px;">Publisher</th><th style="font-size:9px;">Dates</th>
+      <th style="font-size:9px;">Publisher</th><th style="font-size:9px;">Dates</th>
+      <th style="font-size:9px;">Publisher</th><th style="font-size:9px;">Dates</th>
+    </tr>`;
+
+  rows.forEach(({ t, last4 }) => {
+    const inactive = isInactiveThisYear(t);
+    const rowClass = inactive ? 'inactive-row' : '';
+    html += `<tr class="${rowClass}">
+      <td><strong>${t.id}</strong></td>
+      <td>${t.lastCompleted ? fmt(t.lastCompleted) : '—'}</td>`;
+    for (let i = 0; i < 4; i++) {
+      const a = last4[i];
+      if (a) {
+        html += `<td>${a.publisher}</td><td style="font-size:10px;">${fmt(a.dateAssigned)}<br>${a.dateCompleted ? fmt(a.dateCompleted) : '<em>In progress</em>'}</td>`;
+      } else {
+        html += `<td style="color:var(--gray2)">—</td><td></td>`;
+      }
+    }
+    html += `</tr>`;
+  });
+
+  html += `</table></div></div>`;
+  document.getElementById('report-preview').innerHTML = html;
+}
+
+function generateS13PDF() {
+  const { from, to } = getReportRange();
+  if (!from || !to) { showToast('Select a date range first', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const active = Object.values(territories).filter(t => t.active !== false).sort((a, b) => a.id - b.id);
+  const congName = settings.congName || 'Congregation';
+  const sy = reportTab === 'sy' ? document.getElementById('report-sy-select').value : '';
+  const syLabel = sy ? String(parseInt(sy) + 1) : `${fmt(from)}–${fmt(to)}`;
+
+  // S-13 layout constants
+  const pageW = 210, pageH = 297;
+  const lm = 10, rm = 10;
+  const contentW = pageW - lm - rm;
+  const rowsPerPage = 20;
+
+  // Column widths (portrait A4, total ~190mm)
+  // Terr# | Last Done | Pub1 DA | DC | Pub2 DA | DC | Pub3 DA | DC | Pub4 DA | DC
+  const colW = {
+    terrNo: 12,
+    lastDone: 18,
+    pub: 28,
+    da: 14,
+    dc: 14
+  };
+  // 12 + 18 + 4*(28+14+14) = 30 + 4*56 = 30 + 224 = 254 > 190. Need to shrink.
+  // Fit to 190: terrNo=10, lastDone=16, then 4 groups of (pub+da+dc) = 164mm → each group=41mm → pub=19, da=11, dc=11
+  const cTerr = 10, cLast = 16, cPub = 19, cDA = 11, cDC = 11;
+  // Total: 10+16+4*(19+11+11) = 26+4*41 = 26+164 = 190 ✓
+
+  function drawPageHeader(pageNum) {
+    // Title bar
+    doc.setFillColor(26, 39, 68);
+    doc.rect(lm, 8, contentW, 7, 'F');
+    doc.setFontSize(8); doc.setTextColor(240, 192, 96); doc.setFont('helvetica', 'bold');
+    doc.text('TERRITORY ASSIGNMENT RECORD', pageW / 2, 13, { align: 'center' });
+
+    // Service year row
+    doc.setFillColor(243, 240, 235);
+    doc.rect(lm, 15, contentW, 5, 'F');
+    doc.setFontSize(7); doc.setTextColor(26, 39, 68); doc.setFont('helvetica', 'normal');
+    doc.text('Service Year:', lm + 2, 18.5);
+    doc.setFont('helvetica', 'bold');
+    doc.text(syLabel, lm + 24, 18.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Congregation: ${congName}`, lm + 80, 18.5);
+
+    // Column headers - row 1 (group headers)
+    let x = lm;
+    const hY1 = 20, hY2 = 26, hH1 = 6, hH2 = 5;
+
+    doc.setFillColor(26, 39, 68);
+    doc.rect(x, hY1, cTerr, hH1 + hH2, 'F');
+    doc.rect(x + cTerr, hY1, cLast, hH1 + hH2, 'F');
+    for (let g = 0; g < 4; g++) {
+      const gx = x + cTerr + cLast + g * (cPub + cDA + cDC);
+      doc.setFillColor(26, 39, 68);
+      doc.rect(gx, hY1, cPub + cDA + cDC, hH1, 'F');
+      doc.setFillColor(36, 52, 90);
+      doc.rect(gx, hY1 + hH1, cPub + cDA + cDC, hH2, 'F');
+    }
+
+    doc.setFontSize(6); doc.setTextColor(240, 192, 96); doc.setFont('helvetica', 'bold');
+    // Fixed col headers
+    doc.text('Terr.\nNo.', x + cTerr/2, hY1 + 3, { align: 'center' });
+    doc.text('Last Date\nCompleted', x + cTerr + cLast/2, hY1 + 3, { align: 'center' });
+
+    const assignLabels = ['Assigned to (1)', 'Assigned to (2)', 'Assigned to (3)', 'Assigned to (4)'];
+    for (let g = 0; g < 4; g++) {
+      const gx = x + cTerr + cLast + g * (cPub + cDA + cDC);
+      doc.text(assignLabels[g], gx + (cPub + cDA + cDC) / 2, hY1 + 3, { align: 'center' });
+      // Sub-headers
+      doc.setTextColor(200, 220, 255);
+      doc.text('Publisher', gx + cPub / 2, hY2 + 3, { align: 'center' });
+      doc.text('Date\nAssigned', gx + cPub + cDA / 2, hY2 + 2, { align: 'center' });
+      doc.text('Date\nCompleted', gx + cPub + cDA + cDC / 2, hY2 + 2, { align: 'center' });
+      doc.setTextColor(240, 192, 96);
+    }
+
+    return hY1 + hH1 + hH2; // = 31 → first data row starts here
+  }
+
+  function drawRow(t, y, rowH, shade) {
+    const x = lm;
+    const last4 = getLast4Assignments(t, from, to);
+    const inactive = isInactiveThisYear(t);
+
+    // Row background
+    if (shade) { doc.setFillColor(243, 240, 235); doc.rect(x, y, contentW, rowH, 'F'); }
+    if (inactive) { doc.setFillColor(255, 235, 235); doc.rect(x, y, contentW, rowH, 'F'); }
+
+    // Draw vertical grid lines
+    doc.setDrawColor(200, 195, 188); doc.setLineWidth(0.1);
+    let xg = x;
+    [cTerr, cLast, cPub, cDA, cDC, cPub, cDA, cDC, cPub, cDA, cDC, cPub, cDA, cDC].forEach(w => {
+      xg += w; doc.line(xg, y, xg, y + rowH);
+    });
+    // Bottom border
+    doc.setDrawColor(215, 208, 198); doc.setLineWidth(0.15);
+    doc.line(x, y + rowH, x + contentW, y + rowH);
+
+    // Cell text
+    doc.setFontSize(6.5); doc.setFont('helvetica', 'bold');
+    doc.setTextColor(inactive ? 155 : 26, inactive ? 35 : 39, inactive ? 53 : 68);
+    doc.text(String(t.id), x + cTerr / 2, y + rowH / 2 + 1, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.text(t.lastCompleted ? fmt(t.lastCompleted) : '—', x + cTerr + cLast / 2, y + rowH / 2 + 1, { align: 'center' });
+
+    for (let g = 0; g < 4; g++) {
+      const a = last4[g];
+      const gx = x + cTerr + cLast + g * (cPub + cDA + cDC);
+      if (a) {
+        doc.setFont('helvetica', 'normal');
+        // Publisher name - truncate if needed
+        const pubText = doc.splitTextToSize(a.publisher, cPub - 1);
+        doc.text(pubText[0] || '', gx + 1, y + rowH / 2 + 1);
+        doc.setTextColor(80, 80, 80);
+        doc.text(fmt(a.dateAssigned), gx + cPub + cDA / 2, y + rowH / 2 + 1, { align: 'center' });
+        doc.text(a.dateCompleted ? fmt(a.dateCompleted) : '—', gx + cPub + cDA + cDC / 2, y + rowH / 2 + 1, { align: 'center' });
+        doc.setTextColor(inactive ? 155 : 26, inactive ? 35 : 39, inactive ? 53 : 68);
+      }
+    }
+  }
+
+  // Generate pages
+  let currentY = 0;
+  let rowIdx = 0;
+  const rowH = 6.5;
+
+  for (let i = 0; i < active.length; i++) {
+    if (rowIdx % rowsPerPage === 0) {
+      if (rowIdx > 0) doc.addPage();
+      currentY = drawPageHeader(Math.floor(rowIdx / rowsPerPage) + 1);
+      // Outer border
+      doc.setDrawColor(26, 39, 68); doc.setLineWidth(0.4);
+      doc.rect(lm, 8, contentW, pageH - 20);
+    }
+    const shade = (rowIdx % rowsPerPage) % 2 === 1;
+    drawRow(active[i], currentY, rowH, shade);
+    currentY += rowH;
+    rowIdx++;
+  }
+
+  // Footer note on each page
+  const pages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFontSize(5.5); doc.setTextColor(120, 110, 100); doc.setFont('helvetica', 'italic');
+    doc.text('* When beginning a new sheet, use the "Last Date Completed" column to record the date on which each territory was last completed.', lm, pageH - 12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`S-13-E 1/22   ·   Total: ${active.length} territories   ·   Generated: ${new Date().toLocaleDateString('en-GB')}   ·   Page ${p} of ${pages}`, pageW / 2, pageH - 8, { align: 'center' });
+  }
+
+  const fname = `S13_${congName.replace(/\s+/g,'_')}_${sy || 'custom'}.pdf`;
+  doc.save(fname);
+  showToast('PDF downloaded!', 'success');
+}
+
+// ===== GOOGLE SHEETS SYNC =====
+async function syncData() {
+  if (!settings.sheetId || !settings.apiKey) {
+    showToast('Configure Google Sheets in Settings first', 'error');
+    showPage('settings'); return;
+  }
+  const btn = document.getElementById('sync-btn');
+  btn.classList.add('syncing'); btn.textContent = '⟳';
+  showToast('Syncing with Google Sheets...');
+
+  try {
+    // Fetch via Apps Script URL if available (gets structured data)
+    if (settings.scriptUrl) {
+      const resp = await fetch(settings.scriptUrl + '?action=getAll');
+      if (!resp.ok) throw new Error('Script fetch failed: ' + resp.status);
+      const data = await resp.json();
+      mergeSheetData(data);
+    } else {
+      // Fallback: Google Sheets API v4 (read-only with API key)
+      await syncViaAPIKey();
+    }
+    save(); renderAll();
+    showToast('Sync complete!', 'success');
+  } catch(e) {
+    showToast('Sync failed: ' + e.message, 'error');
+  } finally {
+    btn.classList.remove('syncing'); btn.textContent = '⟳';
+  }
+}
+
+function mergeSheetData(data) {
+  // data: { territories: [...], assignments: [...], comments: [...] }
+  const terrs = data.territories || [];
+  const asgns = data.assignments || [];
+  const comms = data.comments || [];
+
+  // Build territory map
+  terrs.forEach(row => {
+    const id = parseInt(row.territory_id);
+    if (!id) return;
+    if (!territories[id]) territories[id] = { id, assignments: [], comments: [] };
+    territories[id].lastCompleted = row.last_completed_date || null;
+  });
+
+  // Build assignment map (group by territory_id)
+  const asgnByTid = {};
+  asgns.forEach(row => {
+    const tid = parseInt(row.territory_id);
+    if (!tid) return;
+    if (!asgnByTid[tid]) asgnByTid[tid] = [];
+    asgnByTid[tid].push({
+      publisher: row.assigned_to || '',
+      dateAssigned: row.date_assigned || null,
+      dateCompleted: row.date_completed || null,
+      comment: ''
+    });
+  });
+
+  Object.keys(asgnByTid).forEach(tid => {
+    tid = parseInt(tid);
+    if (!territories[tid]) territories[tid] = { id: tid, assignments: [], comments: [] };
+    // Replace assignments from sheet (sheet is source of truth)
+    territories[tid].assignments = asgnByTid[tid].sort((a, b) => (a.dateAssigned || '') > (b.dateAssigned || '') ? 1 : -1);
+  });
+
+  // Comments
+  comms.forEach(row => {
+    const tid = parseInt(row.territory_id);
+    if (!tid) return;
+    if (!territories[tid]) territories[tid] = { id: tid, assignments: [], comments: [] };
+    if (!territories[tid].comments) territories[tid].comments = [];
+    territories[tid].comments.push({
+      comment_id: row.comment_id,
+      territory_id: tid,
+      assignment_id: row.assignment_id,
+      comment_text: row.comment_text || '',
+      comment_date: row.comment_date || ''
+    });
+  });
+}
+
+async function syncViaAPIKey() {
+  // Sync Territories sheet
+  const sheetNames = ['Territories', 'Assignments', 'Comments'];
+  const allData = {};
+  for (const sn of sheetNames) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${settings.sheetId}/values/${encodeURIComponent(sn)}!A:Z?key=${settings.apiKey}`;
+    const resp = await fetch(url);
+    if (!resp.ok) continue;
+    const d = await resp.json();
+    allData[sn] = (d.values || []);
+  }
+
+  // Parse Territories
+  const terrRows = allData['Territories'] || [];
+  if (terrRows.length > 1) {
+    terrRows.slice(1).forEach(row => {
+      const id = parseInt(row[0]);
+      if (!id) return;
+      if (!territories[id]) territories[id] = { id, assignments: [], comments: [] };
+      territories[id].lastCompleted = row[1] || null;
+    });
+  }
+
+  // Parse Assignments
+  const asgnRows = allData['Assignments'] || [];
+  if (asgnRows.length > 1) {
+    const asgnByTid = {};
+    asgnRows.slice(1).forEach(row => {
+      const tid = parseInt(row[1]);
+      if (!tid) return;
+      if (!asgnByTid[tid]) asgnByTid[tid] = [];
+      asgnByTid[tid].push({ publisher: row[2]||'', dateAssigned: row[3]||null, dateCompleted: row[4]||null, comment: '' });
+    });
+    Object.entries(asgnByTid).forEach(([tid, list]) => {
+      tid = parseInt(tid);
+      if (!territories[tid]) territories[tid] = { id: tid, assignments: [], comments: [] };
+      territories[tid].assignments = list.sort((a,b) => (a.dateAssigned||'') > (b.dateAssigned||'') ? 1 : -1);
+    });
+  }
+
+  // Parse Comments
+  const commRows = allData['Comments'] || [];
+  if (commRows.length > 1) {
+    commRows.slice(1).forEach(row => {
+      const tid = parseInt(row[1]);
+      if (!tid) return;
+      if (!territories[tid]) territories[tid] = { id: tid, assignments: [], comments: [] };
+      if (!territories[tid].comments) territories[tid].comments = [];
+      territories[tid].comments.push({ comment_id: row[0], territory_id: tid, assignment_id: row[2], comment_text: row[3]||'', comment_date: row[4]||'' });
+    });
+  }
+}
+
+async function postToSheet(data) {
+  if (!settings.scriptUrl) return;
+  try {
+    await fetch(settings.scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+      mode: 'no-cors'
+    });
+  } catch(e) { /* silent - data saved locally */ }
+}
+
+// ===== SETTINGS =====
+function saveSettings() {
+  settings.sheetId = document.getElementById('sheet-id').value.trim();
+  settings.apiKey = document.getElementById('api-key').value.trim();
+  settings.scriptUrl = document.getElementById('script-url').value.trim();
+  localStorage.setItem('tm_settings', JSON.stringify(settings));
+  showToast('Settings saved! Tap ⟳ to sync', 'success');
+}
+
+function saveCongInfo() {
+  settings.congName = document.getElementById('cong-name').value.trim();
+  settings.serviceYear = document.getElementById('service-year').value.trim();
+  localStorage.setItem('tm_settings', JSON.stringify(settings));
+  updateHeaderSub();
+  showToast('Info saved', 'success');
+}
+
+function copyScript() {
+  const text = document.getElementById('apps-script-code').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Script copied!', 'success')).catch(() => showToast('Copy manually from the code block', 'error'));
+}
+
+// ===== DATA MANAGEMENT =====
+function exportJSON() {
+  const blob = new Blob([JSON.stringify({ territories, settings }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `territory-backup-${toISO(new Date())}.json`;
+  a.click();
+  showToast('Data exported!', 'success');
+}
+
+function importJSON() { document.getElementById('import-file').click(); }
+function handleImport(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.territories) {
+        territories = data.territories;
+        if (data.settings) { settings = data.settings; }
+        save(); renderAll();
+        showToast('Data imported!', 'success');
+      } else showToast('Invalid file format', 'error');
+    } catch { showToast('Could not parse JSON', 'error'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL territory data? This cannot be undone.')) return;
+  territories = {};
+  localStorage.removeItem('tm_territories');
+  renderAll();
+  showToast('All data cleared', 'success');
+}
+
+// ===== BUILT-IN DATA =====
+function loadBuiltinData() {
+  // Full dataset from Sample_Data.docx
+  const raw = [
+    [1,"07-05-25",[["A S Joseph","13-11-22","29-02-23"],["Baby A P","29-03-23","07-05-25"]]],
+    [2,"19-07-23",[["A S Joseph","29-02-23","07-05-23"],["Baby A P","01-06-23","19-07-23"]]],
+    [3,"16-07-23",[["P M Kurien","22-03-23","16-07-23"]]],
+    [4,"01-01-18",[]],[5,"01-01-18",[]],
+    [6,"26-07-23",[["Roshan Joseph","22-03-23","26-07-23"],["Joyal Bijoy","16-07-25",null]]],
+    [7,"21-05-23",[["Jaison E L","05-02-23","21-05-23"],["Jaison","24-08-25",null]]],
+    [8,"18-10-23",[["Leenet Phipson","29-05-23","18-10-23"]]],
+    [9,"09-07-23",[["Niya Manoj","15-02-23","09-07-23"],["Paul TC","02-05-26",null]]],
+    [10,"01-01-18",[]],
+    [11,"29-02-24",[["Baby A P","20-12-23","29-02-24"]]],
+    [12,"16-03-25",[["Paulose T V","29-01-23","06-08-23"],["D GROUP","19-02-25","16-03-25"]]],
+    [13,"08-09-24",[["Jaison E L","02-04-23","08-09-24"]]],
+    [14,"22-09-24",[["Jisha Joseph","17-04-24","22-09-24"]]],
+    [15,"08-12-24",[["Merin Joy","19-07-23","08-12-24"]]],
+    [16,"01-01-18",[["Rajesh","16-04-25","18-02-26"]]],
+    [17,"17-03-24",[["Baby A P","25-02-24","17-03-24"],["A S Joseph","15-02-26","12-04-26"]]],
+    [18,"15-10-25",[["Baby A P","04-12-22","05-02-23"],["Jinu George","23-04-23","27-08-23"],["Jaison E L","08-09-24","23-02-25"],["Manu Paulson","25-05-25","15-10-25"]]],
+    [19,"01-01-18",[]],
+    [20,"18-10-25",[["James K M","02-11-22","12-07-23"],["A.P Baby","08-12-24","12-01-25"],["Ap Baby","10-08-25","18-10-25"]]],
+    [21,"03-12-25",[["Baby A P","02-07-23","16-08-23"],["Neha Paul","02-07-25","03-12-25"],["Manju","01-02-26",null]]],
+    [22,"25-05-25",[["Paul T C","30-10-22","23-07-23"],["Manju Paulson","19-02-25","25-05-25"]]],
+    [23,"25-10-25",[["Kurian P M","30-10-22","22-07-23"],["Roshan Joseph","13-08-23","22-03-24"],["James K M","22-01-25","25-10-25"],["Paulson","01-02-26",null]]],
+    [24,"02-03-25",[["Sina Rajesh","30-10-22","12-07-23"],["Chacko A K","16-07-23","02-03-25"],["Manju","22-10-25",null]]],
+    [25,"15-06-25",[["Niya Manoj","18-12-22","15-02-23"],["Robin T P","26-03-23","15-06-25"],["Chako","27-12-25",null]]],
+    [26,"22-01-25",[["Valsa Baby","02-11-22","12-02-23"],["James K M","02-04-23","02-08-23"],["James K M","02-08-23","22-01-25"],["Padmakumar","02-07-25",null]]],
+    [27,"18-02-26",[["Baby A P","16-08-23","10-09-23"],["Elizabeth","22-06-25","18-02-26"],["A S Joseph","12-04-26",null]]],
+    [28,"30-08-24",[["Cherian P V","27-11-22","30-08-24"]]],
+    [29,"07-09-25",[["Phipson Joseph","30-10-22","05-07-23"],["Jisha Joseph","16-07-23","22-03-24"],["Joseph A S","18-08-24","07-09-25"],["AP Baby","12-04-26",null]]],
+    [30,"24-08-25",[["Joseph A S","07-05-23","24-09-23"],["Joseph A S","17-03-24","18-08-24"],["Diliya","25-12-24","24-08-25"],["Alex Baby","01-02-26",null]]],
+    [31,"19-10-25",[["Alex Baby","13-08-23","12-12-24"],["T V Paulose","15-01-25","19-10-25"],["A Group","18-02-26",null]]],
+    [32,"01-03-26",[["Padmakumar","12-07-23","03-12-23"],["Jinu George","04-09-24","19-02-25"],["A P Baby","12-03-25","25-05-25"],["Alex Baby","01-06-25","01-03-26"]]],
+    [33,"01-02-26",[["Annamma Jacob","16-07-23","26-11-23"],["Baby A P","25-08-24","08-12-24"],["Baby AP","25-05-25","10-08-25"],["Diliya","24-08-25","01-02-26"]]],
+    [34,"30-11-25",[["Nimmy Jinu","27-08-23","31-01-24"],["Neha Paul","20-11-24","30-11-25"],["Poulose","25-01-26",null]]],
+    [35,"02-11-25",[["Asha Paul","10-09-23","10-07-24"],["Nora Paul","20-11-24","02-03-25"],["Ap Baby","18-10-25","02-11-25"],["Phipson","04-01-26",null]]],
+    [36,"18-04-26",[["Joseph A S","24-09-23","17-03-24"],["Mebin Joseph","08-12-24","21-09-25"],["Ebin","04-01-26","18-04-26"]]],
+    [37,"02-07-25",[["Sina Rajesh","22-11-23","26-06-24"],["Annamma Jacob","12-03-25","02-07-25"],["James Group-B","02-12-25",null]]],
+    [38,"30-11-25",[["Paul T C","23-07-23","06-11-24"],["Alex Baby","11-12-24","01-06-25"],["Seena Rajesh","10-09-25","30-11-25"]]],
+    [39,"01-01-18",[]],[40,"01-01-15",[]],
+    [41,"01-01-18",[]],[42,"01-01-18",[]],[43,"01-01-18",[]],[44,"01-01-18",[]],
+    [45,"26-10-25",[["Paulose T V","06-08-23","15-01-25"],["AS Joseph","07-09-25","26-10-25"]]],
+    [46,"01-01-18",[]],[47,"01-01-18",[]],[48,"01-01-16",[]],
+    [49,"15-03-26",[["Baby A P","10-09-23","02-11-23"],["Sheena Bijoy","21-11-23","29-09-24"],["Group B","10-11-24","16-04-25"],["Nissy","01-06-25","15-03-26"]]],
+    [50,"20-11-24",[["Baby A P","08-11-23","26-11-23"],["Phipson Joseph","26-06-24","20-11-24"],["Nissy","15-03-26",null]]],
+    [51,"09-08-25",[["Ebin Baby","01-06-25","09-08-25"]]],
+    [52,"25-05-25",[["Phipson Joseph","20-11-24","25-05-25"]]],
+    [53,"01-06-25",[["Phipson Joseph","19-03-25","01-06-25"]]],
+    [54,"03-12-25",[["Mathai TM","19-04-25","03-12-25"]]],
+    [55,"24-08-25",[["Padmakumar M","20-11-24","24-08-25"]]],
+    [56,"12-03-25",[["Baby A P","26-11-23","20-12-23"],["Baby A P","12-01-24","12-03-25"]]],
+    [57,"04-05-24",[["Manju Paulson","20-09-23","04-05-24"]]],
+    [58,"15-01-26",[["Phipson Joseph","12-07-25","15-01-26"]]],
+    [59,"19-02-25",[["Jinu George","13-03-24","09-04-24"],["Jisha Joseph","22-09-24","19-02-25"]]],
+    [60,"02-07-25",[["Sheena Bijoy","29-09-24","02-07-25"]]],
+    [61,"24-08-25",[["Padmakumar M","19-03-25","24-08-25"]]],
+    [62,"08-12-24",[["Melbin Joseph","22-03-24","08-12-24"],["Sheena Bijoy","02-07-25",null]]],
+    [63,"25-08-24",[["Baby A P","17-03-24","25-08-24"]]],
+    [64,"24-10-25",[["K M James","19-03-25","24-10-25"],["Km James","24-10-25",null]]],
+    [65,"28-04-24",[["Valsa Baby","29-11-23","28-04-24"]]],
+    [66,"29-04-26",[["Leo Taize Thimothy","19-03-25","29-04-26"]]],
+    [67,"26-06-24",[["Niya Manoj","09-07-23","26-06-24"]]],
+    [68,"08-12-24",[["Beena Joseph","19-07-23","08-12-24"]]],
+    [69,"16-10-24",[["Mathai T M","05-05-24","16-10-24"]]],
+    [70,"21-09-25",[["Group B","22-11-23","10-11-24"],["Aneeta Melbin","08-12-24","21-09-25"],["Beena","21-09-25",null]]],
+    [71,"30-08-24",[["Padmakumar M","26-11-23","30-08-24"]]],
+    [72,"26-06-24",[["Leenet Phipson","18-10-23","26-06-24"],["Poulose","19-10-25",null]]],
+    [73,"01-01-07",[]],[74,"01-01-18",[]],[75,"01-01-18",[]],
+    [76,"01-02-26",[["Anitta Melbin","02-11-22","16-07-23"],["Manju","15-10-25","01-02-26"]]],
+    [77,"01-02-26",[["Johnson Baby","19-03-25","01-02-26"]]],
+    [78,"05-05-24",[["Mathai T M","05-07-23","05-05-24"]]],
+    [79,"16-06-25",[["Beena Joseph","27-11-22","16-07-23"],["D Group","16-03-25","16-06-25"],["C Group","07-09-25",null]]],
+    [80,"27-12-25",[["Annamma Jacob","12-02-23","16-07-23"],["Mathai T M","30-10-24","19-02-25"],["Chacko","02-03-25","27-12-25"],["Leenet","25-01-26",null]]],
+    [81,"10-01-26",[["Melbin Joseph","02-11-22","19-07-23"],["Mathai","19-02-25","01-06-25"],["Baby A P","02-11-25","10-01-26"],["Phipson","11-01-26",null]]],
+    [82,"01-01-18",[]],[83,"01-01-18",[]],
+    [84,"15-10-25",[["Rajesh K","02-11-22","22-11-23"],["Phipson","01-06-25","15-10-25"],["Niya Manoj","04-02-26",null]]],
+    [85,"12-04-26",[["Joyal Bijoy","02-11-22","13-08-23"],["Paul T C","10-11-24","03-12-25"],["A Baby","04-01-26","12-04-26"]]],
+    [86,"15-06-25",[["Alex Baby","04-12-22","13-08-23"],["Paulson Baby","25-08-24","15-06-25"],["Neha Paul","30-11-25",null]]],
+    [87,"15-10-25",[["Helna Kurian","09-11-22","02-08-23"],["Helna Kurian","02-08-23","18-12-24"],["Johnson Baby","25-12-24","15-10-25"],["Mathai","03-12-25",null]]],
+    [88,"27-08-23",[["Elizabeth Santosh","18-01-23","27-08-23"],["Jisha Joseph","18-02-26",null]]],
+    [89,"31-01-26",[["Bijoy Enas","05-02-23","05-07-23"],["Anita Melbin","16-07-23","08-12-24"],["Ebin","09-08-25","31-01-26"],["Roshan","18-02-26",null]]],
+    [90,"29-09-24",[["Hanna Bijoy","10-09-23","29-09-24"]]],
+    [91,"01-03-26",[["Sheena Bijoy","27-11-22","15-10-23"],["C-Group","22-12-24","29-10-25"],["Josey","02-11-25","01-03-26"]]],
+    [92,"18-04-26",[["Paulson Baby","02-04-23","06-09-23"],["Ebin","03-12-25","18-04-26"]]],
+    [93,"20-09-23",[["Helna Kurian","30-10-22","09-11-22"],["Manju Paulson","02-04-23","20-09-23"]]],
+    [94,"12-12-24",[["Ebin K Baby","24-07-24","12-12-24"],["Rajesh","18-02-26",null]]],
+    [95,"01-02-26",[["Baby A P","05-02-23","02-04-23"],["Paulson Baby","01-06-25","01-02-26"],["Ebin","18-04-26",null]]],
+    [96,"25-08-24",[["Paulson Baby","10-09-23","25-08-24"]]],
+    [97,"12-07-23",[["Padmakumar M","05-02-23","12-07-23"]]],
+    [98,"26-05-24",[["Sheena Bijoy","05-07-23","26-05-24"]]],
+    [99,"09-08-25",[["Valsa Baby","12-08-23","16-07-23"],["Ebin K Baby","18-12-24","09-08-25"],["Helna","01-10-25",null]]],
+    [100,"22-12-24",[["Lissy Varkey","18-01-23","30-07-23"],["Leo Taize","02-06-24","22-12-24"],["Helna","15-10-25",null]]],
+    [101,"29-04-26",[["Neha Paul","10-09-23","13-07-24"],["Taize Thimothy","22-12-24","02-11-25"],["Taize","27-12-25","29-04-26"]]],
+    [102,"08-02-26",[["Lissy Varkey","30-07-23","08-09-24"],["Leenet Phipson","20-11-24","15-10-25"],["Niya Manoj","15-10-25","08-02-26"]]],
+    [103,"15-04-26",[["Johnson Baby","12-05-24","25-12-24"],["Niya Manoj","19-02-25","28-05-25"],["Basil","01-11-25","15-04-26"]]],
+    [104,"15-10-25",[["Manu Paulose","03-12-23","15-01-25"],["Niya Manoj","28-05-25","15-10-25"],["Leenet","15-10-25",null]]],
+    [105,"19-02-25",[["Niya Manoj","26-06-24","19-02-25"]]],
+    [106,"11-12-24",[["Manju Paulson","04-05-24","11-12-24"]]],
+    [107,"20-11-24",[["Leenet Phipson","26-06-24","20-11-24"],["Paulson","08-03-26",null]]],
+    [108,"26-11-23",[["Phipson Joseph","05-07-23","26-11-23"],["Melbin","26-10-25",null]]],
+    [109,"11-12-24",[["Joyal Bijoy","13-08-23","11-12-24"]]],
+  ];
+
+  raw.forEach(([id, lc, asgns]) => {
+    territories[id] = {
+      id,
+      lastCompleted: parseDate(lc),
+      assignments: asgns.map(([pub, da, dc]) => ({
+        publisher: pub,
+        dateAssigned: parseDate(da),
+        dateCompleted: dc ? parseDate(dc) : null,
+        comment: ''
+      })),
+      comments: []
+    };
+  });
+
+  // Set a sample comment
+  if (territories[28]) {
+    territories[28].comments = [{ comment_id: 1, territory_id: 28, assignment_id: 0, comment_text: 'Missing assignment records - check physical S-13 forms', comment_date: '2024-08-30' }];
+  }
+
+  settings.serviceYear = '2024'; // Current service year is 2024–2025 (Sep 2024 – Aug 2025)
+  document.getElementById('service-year').value = '2024';
+  save();
+  localStorage.setItem('tm_settings', JSON.stringify(settings));
+  renderAll();
+  showToast(`Loaded ${Object.keys(territories).length} territories from sample data`, 'success');
+}
+
+// ===== UTILITIES =====
+function fmt(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d)) return dateStr;
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '-');
+  } catch { return dateStr; }
+}
+
+function toISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function parseDate(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  // YYYY-MM-DD already
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // dd-mm-yyyy or dd-mm-yy
+  const m1 = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})$/);
+  if (m1) {
+    let [, d, mo, y] = m1;
+    if (y.length === 2) y = '20' + y;
+    return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  }
+  return s;
+}
+
+function renderAll() { renderDashboard(); renderTerritories(); }
+
+function showToast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// Init bulk row counter
+bulkRowN = 1;
+
+init();
+</script>
+</body>
+</html>
