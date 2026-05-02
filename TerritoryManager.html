@@ -703,7 +703,12 @@ function updateAssignmentRow(ss, aid, date) {
 <script>
 // ===== STATE =====
 let territories = {};  // { id: { id, name, lastCompleted, assignments:[], comments:[] } }
-let settings = {};
+//let settings = {};
+  let settings = {
+  sheetId: "https://docs.google.com/spreadsheets/d/145CSJpaadbGDYlvAC8ljE5XNuPyGj6RknOt_IqFfuv8/edit",
+  apiKey: "AIzaSyDyKAN_mCNAZ1i88skeGIncTylrb2_zNKo",
+  scriptUrl: "https://script.google.com/macros/s/AKfycbw862VEn3AnDdivlfqDn_lNfXTuIfvZCDeZGyboSryAfa8ZnuL84F7Gr4NtUB9Mb7frAw/exec"
+};
 let currentReturnId = null;
 let currentCommentId = null;
 let reportTab = 'sy';
